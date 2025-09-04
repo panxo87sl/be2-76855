@@ -1,0 +1,28 @@
+{
+  "name": "be2-76855",
+  "version": "1.0.0",
+  "description": "Backend2 - Coder",
+  "homepage": "https://github.com/panxo87sl/be2-76855#readme",
+  "bugs": {
+    "url": "https://github.com/panxo87sl/be2-76855/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panxo87sl/be2-76855.git"
+  },
+  "license": "MIT",
+  "author": "Francisco Orellana",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

@@ -4,12 +4,14 @@ import mongoose from "mongoose";
 
 const router = Router();
 
+//? se crean rutas alternativas para gestion mas rapida de usuarios, util para las pruebas en el desarrollo
+
 router.get("/", async (request, response) => {
   const users = await User.find();
   response.status(200).json({ payload: { users: users } });
 });
 
-router.post("/register", async (request, response) => {
+router.post("/", async (request, response) => {
   try {
     const { first_name, last_name, email, age, password } = request.body;
     if (!first_name || !last_name || !email || !age || !password) {
@@ -24,22 +26,6 @@ router.post("/register", async (request, response) => {
     response.status(201).json({ message: "Usuario creado", payload: { usuario: user } });
   } catch (error) {
     response.status(500).json({ error: "Usuario no creado", message: error.message });
-  }
-});
-
-router.post("/login", async (request, response) => {
-  try {
-    const { email, password } = request.body;
-    if (!email || !password) {
-      return response.status(400).json({ error: "Login Incorrecto", message: "Usuario o contraseña incorrectas" });
-    }
-    const auxUser = await User.findOne({ email });
-    if (!auxUser) {
-      return response.status(404).json({ error: "Login Incorrecto", message: "El usuario no existe" });
-    }
-    response.status(200).json({ message: "Logeado", payload: { usuario: auxUser } });
-  } catch (error) {
-    response.status(500).json({ error: "Login Incorrecto", message: error.message });
   }
 });
 

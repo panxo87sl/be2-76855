@@ -9,6 +9,8 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import passport from "passport";
+import { initPassport } from "./config/auth/passport.config.js";
 
 //Parametros del servidor
 const app = express();
@@ -44,6 +46,10 @@ const startServer = async () => {
       },
     })
   );
+
+  initPassport();
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   //Llamadas al enrutador
   app.use("/", homeRouter);

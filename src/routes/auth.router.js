@@ -1,6 +1,6 @@
 import { Router } from "express";
 import User from "../config/models/user.model.js";
-import { alreadyLoggedIn, requireLogin, requireJWT } from "../middleware/auth.middleware.js";
+import { alreadyLoggedIn, requireLogin, requireJWT, requireJwtCookie } from "../middleware/auth.middleware.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import passport from "passport";
@@ -50,7 +50,7 @@ router.post("/login", alreadyLoggedIn, async (request, response, next) => {
   // } catch (error) {
   //   response.status(500).json({ error: "Login Incorrecto", message: error.message });
   // }
-  //! Se cambia de estrategia de LOGIN por passport
+  //! Se cambia de estrategia de LOGIN por passport-jwt + Cookie Firmada
 
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
@@ -64,27 +64,40 @@ router.post("/login", alreadyLoggedIn, async (request, response, next) => {
   })(request, response, next);
 });
 
-router.post("/logout", requireLogin, async (request, response, next) => {
-  // request.session.destroy(() => {
-  //   response.status(200).json({ message: "Logout Exitoso" });
-  // });
-  //! Se cambia de estrategia de LOGOUT por passport
+// router.post("/logout", requireLogin, async (request, response, next) => {
+//   request.session.destroy(() => {
+//     response.status(200).json({ message: "Logout Exitoso" });
+//   });
+//   //! Se cambia de estrategia de LOGOUT por passport
 
-  request.logout({ keepSessionInfo: true }, (err) => {
-    if (err) return next(err);
-    //hay que destruir la session
-    if (request.session) {
-      request.session.destroy((err2) => {
-        if (err2) return next(err2);
-        //Limpiar la cookie
-        response.clearCookie("connect.sid");
-        return response.json({ message: "Logout OK" });
-      });
-    } else {
-      response.clearCookie("connect.sid");
-      return response.json({ message: "Logout OK (Sin session)" });
-    }
-  });
+//   request.logout({ keepSessionInfo: true }, (err) => {
+//     if (err) return next(err);
+//     //hay que destruir la session
+//     if (request.session) {
+//       request.session.destroy((err2) => {
+//         if (err2) return next(err2);
+//         //Limpiar la cookie
+//         response.clearCookie("connect.sid");
+//         return response.json({ message: "Logout OK" });
+//       });
+//     } else {
+//       response.clearCookie("connect.sid");
+//       return response.json({ message: "Logout OK (Sin session)" });
+//     }
+//   });
+//   //! Se cambia de estrategia de LOGOUT por Token en cookie firmada
+
+// });
+
+router.post("/logout", async (request, response) => {
+  const token = request.signedCookies?.token;
+
+  if (!token) {
+    return response.status(400).json({ error: "No hay sesión activa" });
+  }
+
+  response.clearCookie("token");
+  response.status(200).json({ message: "Logout OK (JWT cookie eliminada)" });
 });
 
 //! Estrategia Login con GitHub
@@ -100,12 +113,19 @@ router.post("/jwt/login", async (request, response) => {
   const { email, password } = request.body;
   const auxUser = await User.findOne({ email });
   if (!auxUser || !auxUser.password) return response.status(400).json({ error: "Credenciales inválidas" });
-  const succes = await bcrypt.compare(password, auxUser.password);
-  if (!succes) return response.status(400).json({ error: "Credenciales inválidas" });
+  const passwordValid = await bcrypt.compare(password, auxUser.password);
+  if (!passwordValid) return response.status(401).json({ error: "Credenciales inválidas" });
 
   const payload = { sub: String(auxUser._id), email: auxUser.email, role: auxUser.role };
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-  response.json({ message: "Login OK (JWT)", token });
+  // response.json({ message: "Login OK (JWT)", token });
+  response
+    .cookie("token", token, {
+      httpOnly: true,
+      signed: true, // usa req.signedCookies.token
+      maxAge: 60 * 60 * 1000, // 1 hora
+    })
+    .json({ message: "Login OK (JWT)", token });
 });
 
 router.get("/jwt/me", requireJWT, async (request, response) => {

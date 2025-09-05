@@ -10,8 +10,8 @@ dotenv.config();
 //! Necesario para Estrategia Passport + JWT Estrategia
 // Funcion que sirve para leer el token desde la cookie httponly "acces token"
 function cookieExtractor(request) {
-  if (request && request.cookies && request.cookies.access_token) {
-    return request.cookies.access_token;
+  if (request && request.signedCookies && request.signedCookies.token) {
+    return request.signedCookies.token;
   }
   return null;
 }

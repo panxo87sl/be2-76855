@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import passport from "passport";
 const router = Router();
 
-router.post("/register", alreadyLoggedIn, async (request, response) => {
+router.post("/register", requireJwtCookie, async (request, response) => {
   try {
     const { first_name, last_name, email, age, password } = request.body;
     if (!first_name || !last_name || !email || !age || !password) {

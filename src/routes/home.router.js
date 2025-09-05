@@ -3,7 +3,7 @@ import { Router } from "express";
 const router = Router();
 
 router.get("/", (request, response) => {
-  response.status(200).send("Hola a Todos los giles");
+  response.status(200).send("servidor corriendo");
 });
 
 export default router;

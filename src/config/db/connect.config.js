@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 
-const dbName = "coderBackend2";
-
-export const connectToMongoDB = async () => {
+export const connectToMongoDBLocal = async () => {
   try {
-    await mongoose.connect(`mongodb://127.0.0.1:27017/${dbName}`);
-    console.log("MONGODB conectado exitosamente");
+    await mongoose.connect(process.env.MONGO_URI_LOCAL);
+    console.log("🌿 MONGODB conectado exitosamente");
   } catch (error) {
     console.error(error);
     process.exit(1);
@@ -14,10 +14,16 @@ export const connectToMongoDB = async () => {
 
 export const connectToMongoDBAtlas = async () => {
   try {
-    await mongoose.connect(`mongodb+srv://admin:admin1234@cluster0.bm6y9cu.mongodb.net/${dbName}?retryWrites=true&w=majority&appName=Cluster0`);
-    console.log("MONGOATLAS conectado exitosamente");
+    await mongoose.connect(process.env.MONGO_URI_ATLAS);
+    console.log("🌎 MONGOATLAS conectado exitosamente");
   } catch (error) {
     console.error(error);
     process.exit(1);
   }
+};
+
+export const connectAuto = async () => {
+  const target = (process.env.MONGO_TARGET || "LOCAL").toUpperCase();
+  if (target === "ATLAS") return connectToMongoDBAtlas();
+  return connectToMongoDBLocal();
 };

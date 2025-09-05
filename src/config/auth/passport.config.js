@@ -3,8 +3,21 @@ import { Strategy as LocalStrategy } from "passport-local";
 // import { Strategy as GitHubStrategy } from "passport-github2";
 import bcrypt from "bcrypt";
 import User from "../models/user.model.js";
+import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import dotenv from "dotenv";
+dotenv.config();
+
+//! Necesario para Estrategia Passport + JWT Estrategia
+// Funcion que sirve para leer el token desde la cookie httponly "acces token"
+function cookieExtractor(request) {
+  if (request && request.cookies && request.cookies.access_token) {
+    return request.cookies.access_token;
+  }
+  return null;
+}
 
 export function initPassport() {
+  //! Estrategia Passport + JWT Estrategia
   passport.use(
     "jwt-cookie",
     new JwtStrategy(
@@ -14,19 +27,17 @@ export function initPassport() {
       },
       async (payload, done) => {
         try {
-          const user = await User.findById(payload.sub).lean();
-          if (!user) return done(null, false);
-          return done(null, { _id: user._id, email: user.email, role: user.role });
+          const auxUser = await User.findById(payload.sub).lean();
+          if (!auxUser) return done(null, false);
+          return done(null, { _id: auxUser._id, email: auxUser.email, role: auxUser.role });
         } catch (error) {
           return done(error, false);
         }
       }
     )
   );
-}
 
-export function initPassport() {
-  // Local: email + password
+  //! Estrategia Local: email + password
   passport.use(
     new LocalStrategy({ usernameField: "email", passwordField: "password", session: true }, async (email, password, done) => {
       try {
@@ -48,7 +59,7 @@ export function initPassport() {
     })
   );
 
-  //! GitHub OAuth
+  //! Estrategia GitHub OAuth
   // passport.use(
   //   new GitHubStrategy(
   //     {

@@ -1,8 +1,29 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Strategy as GitHubStrategy } from "passport-github2";
+// import { Strategy as GitHubStrategy } from "passport-github2";
 import bcrypt from "bcrypt";
 import User from "../models/user.model.js";
+
+export function initPassport() {
+  passport.use(
+    "jwt-cookie",
+    new JwtStrategy(
+      {
+        jwtFromRequest: cookieExtractor,
+        secretOrKey: process.env.JWT_SECRET,
+      },
+      async (payload, done) => {
+        try {
+          const user = await User.findById(payload.sub).lean();
+          if (!user) return done(null, false);
+          return done(null, { _id: user._id, email: user.email, role: user.role });
+        } catch (error) {
+          return done(error, false);
+        }
+      }
+    )
+  );
+}
 
 export function initPassport() {
   // Local: email + password
@@ -27,7 +48,7 @@ export function initPassport() {
     })
   );
 
-  // GitHub OAuth
+  //! GitHub OAuth
   // passport.use(
   //   new GitHubStrategy(
   //     {

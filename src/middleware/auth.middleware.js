@@ -1,4 +1,5 @@
 import { request, response } from "express";
+import jwt from "jsonwebtoken";
 
 export function requireLogin(request, response, next) {
   if (!request.session.user) {
@@ -25,13 +26,15 @@ export function requireRole(role) {
 }
 
 export function requireJWT(request, response, next) {
-  const header = request.header.authorization || "";
-  const token = header.startWith("Bearer ") ? header.slice(7) : null;
+  const header = request.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+
   if (!token) return response.status(401).json({ error: "No existe el token" });
+
   try {
     request.jwt = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (error) {
-    return response.session(401).json({ error: "Token invalido/expirado" });
+    return response.status(401).json({ error: "Token invalido/expirado" });
   }
 }

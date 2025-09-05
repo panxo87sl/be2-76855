@@ -1,6 +1,6 @@
 import { Router } from "express";
 import User from "../config/models/user.model.js";
-import { alreadyLoggedIn, requireLogin } from "../middleware/auth.middleware.js";
+import { alreadyLoggedIn, requireLogin, requireJWT } from "../middleware/auth.middleware.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import passport from "passport";
@@ -85,6 +85,35 @@ router.post("/logout", requireLogin, async (request, response, next) => {
       return response.json({ message: "Logout OK (Sin session)" });
     }
   });
+});
+
+//! Estrategia Login con GitHub
+// router.get("/github", passport.authenticate("github", { scope: ["user:email"] }));
+// router.get("/github/callback", passport.authenticate("github", { failureRedirect: "/auth/github/fail" }), (req, res) => {
+//   req.session.user = req.user;
+//   res.json({ message: "Login OK con GitHub (session)", user: req.user });
+// });
+// router.get("/github/fail", (req, res) => res.status(401).json({ error: "GitHub auth falló" }));
+
+//! Estrategia con JWT
+router.post("/jwt/login", async (request, response) => {
+  const { email, password } = request.body;
+  const auxUser = await User.findOne({ email });
+  if (!auxUser || !auxUser.password) return response.status(400).json({ error: "Credenciales inválidas" });
+  const succes = await bcrypt.compare(password, auxUser.password);
+  if (!succes) return response.status(400).json({ error: "Credenciales inválidas" });
+
+  const payload = { sub: String(auxUser._id), email: auxUser.email, role: auxUser.role };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+  response.json({ message: "Login OK (JWT)", token });
+});
+
+router.get("/jwt/me", requireJWT, async (request, response) => {
+  // req.jwt viene del middleware
+  const auxUser = await User.findById(request.jwt.sub).lean();
+  if (!auxUser) return response.status(404).json({ error: "No encontrado" });
+  const { first_name, last_name, email, age, role } = auxUser;
+  response.json({ first_name, last_name, email, age, role });
 });
 
 export default router;

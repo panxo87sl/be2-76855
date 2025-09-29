@@ -8,7 +8,12 @@ export function requireJwtCookie(request, response, next) {
   passport.authenticate("jwt-cookie", { session: false }, (err, user, info) => {
     if (err) return next(err);
     if (!user) {
-      return response.status(401).json({ error: "Token inválido o expirado", message: info?.message || "No se pudo autenticar al usuario" });
+      return response
+        .status(401)
+        .json({
+          error: "Token inválido o expirado",
+          message: info?.message || "No se pudo autenticar al usuario",
+        });
     }
     request.user = user; // Asigna el user para que lo uses en la ruta
     next();
@@ -27,16 +32,6 @@ export function alreadyLoggedIn(request, response, next) {
     return response.status(403).json({ error: "Usuario ya está logueado" });
   }
   next();
-}
-
-//Autorizacion por Roles
-export function requireRole(role) {
-  return (request, response, next) => {
-    const user = request.session?.user || request.user; //?session o passport
-    if (!user) return response.status(401).json({ error: "No hay Autorizacion" });
-    if (user.role !== role) return response.status(403).json({ error: "Prohibido" });
-    next();
-  };
 }
 
 export function requireJWT(request, response, next) {

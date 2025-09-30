@@ -5,7 +5,7 @@ dotenv.config();
 export const connectToMongoDBLocal = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI_LOCAL);
-    console.log("🌿 MONGODB conectado exitosamente");
+    console.log("🌿 MONGODB COMPASS conectado exitosamente");
   } catch (error) {
     console.error(error);
     process.exit(1);

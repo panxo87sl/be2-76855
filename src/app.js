@@ -1,9 +1,10 @@
 import express, { request, response } from "express";
-import homeRouter from "./routes/home.router.js";
-import userRouter from "./routes/user.router.js";
-import authRouter from "./routes/auth.router.js";
-import sessionsRouter from "./routes/sessions.router.js";
-import profileRouter from "./routes/profile.router.js";
+// import homeRouter from "./routes/home.router.js";
+// import userRouter from "./routes/user.router.js";
+// import authRouter from "./routes/auth.router.js";
+// import sessionsRouter from "./routes/sessions.router.js";
+// import profileRouter from "./routes/profile.router.js";
+import apiV1Router from "./routes/api.v1.router.js";
 import { connectAuto } from "./config/db/connect.config.js";
 import logger from "./middleware/logger.middleware.js";
 import session from "express-session";
@@ -53,11 +54,15 @@ const startServer = async () => {
   app.use(passport.session());
 
   //Llamadas al enrutador
-  app.use("/", homeRouter);
-  app.use("/user", userRouter);
-  app.use("/auth", authRouter);
-  app.use("/auth/Profile", profileRouter);
-  app.use("/api/sessions", sessionsRouter);
+  // app.use("/", homeRouter);
+  // app.use("/user", userRouter);
+  // app.use("/auth", authRouter);
+  // app.use("/auth/Profile", profileRouter);
+  // app.use("/api/sessions", sessionsRouter);
+
+  //Agrupar routers versionados
+  app.use("/api/v1", apiV1Router);
+
   app.use((request, response) => {
     response.status(404).json({ error: "Pagina no encontrada" });
   });

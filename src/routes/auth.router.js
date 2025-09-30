@@ -1,24 +1,41 @@
 import { Router } from "express";
-import User from "../config/models/user.model.js";
-import { alreadyLoggedIn, requireLogin, requireJWT, requireJwtCookie } from "../middleware/auth.middleware.js";
+import UserService from "../dao/services/user.services.js";
+import {
+  alreadyLoggedIn,
+  requireJWT,
+  requireJwtCookie,
+} from "../middleware/auth.middleware.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import passport from "passport";
+
 const router = Router();
+const userService = new UserService();
 
 router.post("/register", requireJwtCookie, async (request, response) => {
   try {
     const { first_name, last_name, email, age, password } = request.body;
     if (!first_name || !last_name || !email || !age || !password) {
-      return response.status(400).json({ error: "Usuario no creado", message: "Datos requeridos incompletos" });
+      return response
+        .status(400)
+        .json({ error: "Usuario no creado", message: "Datos requeridos incompletos" });
     }
-    const auxUser = await User.findOne({ email });
+    const auxUser = await userService.getUserByEmail(email);
     if (auxUser) {
-      return response.status(400).json({ error: "Usuario no creado", message: "Email ya esta registrado" });
+      return response
+        .status(400)
+        .json({ error: "Usuario no creado", message: "Email ya esta registrado" });
     }
     const hash = await bcrypt.hash(password, 10); //? Hasheado a 10 caracteres
-    const user = new User({ first_name, last_name, email, age: parseInt(age), password: hash });
-    await user.save();
+    // const user = new User({ first_name, last_name, email, age: parseInt(age), password: hash });
+    // await user.save(); //? Cambio de tecnologia a DAO
+    const user = await userService.createUser({
+      first_name,
+      last_name,
+      email,
+      age: parseInt(age),
+      password: hash,
+    });
     response.status(201).json({ message: "Usuario creado", payload: { usuario: user } });
   } catch (error) {
     response.status(500).json({ error: "Usuario no creado", message: error.message });
@@ -54,7 +71,8 @@ router.post("/login", alreadyLoggedIn, async (request, response, next) => {
 
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
-    if (!user) return response.status(401).json({ error: info?.message || "Credenciales Invalidas" });
+    if (!user)
+      return response.status(401).json({ error: info?.message || "Credenciales Invalidas" });
 
     request.login(user, { session: true }, (err2) => {
       if (err2) return next(err2);
@@ -111,8 +129,9 @@ router.post("/logout", async (request, response) => {
 //! Estrategia con JWT
 router.post("/jwt/login", async (request, response) => {
   const { email, password } = request.body;
-  const auxUser = await User.findOne({ email });
-  if (!auxUser || !auxUser.password) return response.status(400).json({ error: "Credenciales inválidas" });
+  const auxUser = await userService.getUserByEmail(email);
+  if (!auxUser || !auxUser.password)
+    return response.status(400).json({ error: "Credenciales inválidas" });
   const passwordValid = await bcrypt.compare(password, auxUser.password);
   if (!passwordValid) return response.status(401).json({ error: "Credenciales inválidas" });
 
@@ -130,7 +149,7 @@ router.post("/jwt/login", async (request, response) => {
 
 router.get("/jwt/me", requireJWT, async (request, response) => {
   // req.jwt viene del middleware
-  const auxUser = await User.findById(request.jwt.sub).lean();
+  const auxUser = await userService.getUserById(request.jwt.sub).lean();
   if (!auxUser) return response.status(404).json({ error: "No encontrado" });
   const { first_name, last_name, email, age, role } = auxUser;
   response.json({ first_name, last_name, email, age, role });

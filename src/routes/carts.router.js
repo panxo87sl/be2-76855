@@ -1,5 +1,6 @@
 import { Router } from "express";
 import CartService from "../dao/services/cart.services.js";
+import { requireJwtCookie } from "../middleware/auth.middleware.js";
 
 const router = Router();
 const cartService = new CartService();
@@ -30,6 +31,23 @@ router.get("/:id", async (request, response) => {
     }
 
     response.status(200).json({ message: "Carrito encontrado", payload: { carrito: cart } });
+  } catch (error) {
+    response.status(500).json({ error: "Error del servidor", message: error.message });
+  }
+});
+
+router.get("/mycart", requireJwtCookie, async (request, response) => {
+  try {
+    const userId = request.user._id;
+    const cart = await cartService.getCartByUserId(userId);
+
+    if (!cart) {
+      return response
+        .status(404)
+        .json({ error: "Carrito no encontrado", message: "Este usuario no tiene carrito" });
+    }
+
+    response.status(200).json({ message: "Carrito del usuario", payload: { carrito: cart } });
   } catch (error) {
     response.status(500).json({ error: "Error del servidor", message: error.message });
   }

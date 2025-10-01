@@ -29,7 +29,7 @@ export function initPassport() {
         try {
           const auxUser = await User.findById(payload.sub).lean();
           if (!auxUser) return done(null, false);
-          return done(null, { _id: auxUser._id, email: auxUser.email, role: auxUser.role });
+          return done(null, auxUser);
         } catch (error) {
           return done(error, false);
         }
@@ -39,24 +39,28 @@ export function initPassport() {
 
   //! Estrategia Local: email + password
   passport.use(
-    new LocalStrategy({ usernameField: "email", passwordField: "password", session: true }, async (email, password, done) => {
-      try {
-        const user = await User.findOne({ email });
-        if (!user || !user.password) return done(null, false, { message: "Credenciales inválidas" });
-        const ok = await bcrypt.compare(password, user.password);
-        if (!ok) return done(null, false, { message: "Credenciales inválidas" });
-        return done(null, {
-          _id: user._id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          age: user.age,
-          role: user.role,
-        });
-      } catch (err) {
-        return done(err);
+    new LocalStrategy(
+      { usernameField: "email", passwordField: "password", session: true },
+      async (email, password, done) => {
+        try {
+          const user = await User.findOne({ email });
+          if (!user || !user.password)
+            return done(null, false, { message: "Credenciales inválidas" });
+          const ok = await bcrypt.compare(password, user.password);
+          if (!ok) return done(null, false, { message: "Credenciales inválidas" });
+          return done(null, {
+            _id: user._id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            age: user.age,
+            role: user.role,
+          });
+        } catch (err) {
+          return done(err);
+        }
       }
-    })
+    )
   );
 
   //! Estrategia GitHub OAuth
@@ -100,7 +104,14 @@ export function initPassport() {
     try {
       const u = await User.findById(id).lean();
       if (!u) return done(null, false);
-      done(null, { _id: u._id, first_name: u.first_name, last_name: u.last_name, email: u.email, age: u.age, role: u.role });
+      done(null, {
+        _id: u._id,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        email: u.email,
+        age: u.age,
+        role: u.role,
+      });
     } catch (err) {
       done(err);
     }

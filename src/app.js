@@ -13,6 +13,8 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import passport from "passport";
 import { initPassport } from "./config/auth/passport.config.js";
+import processRouter from "./routes/process.router.js";
+import env, { validateEnv } from "./config/env.config.js";
 
 //Parametros del servidor
 const app = express();
@@ -26,6 +28,8 @@ app.use(cookieParser(process.env.SESSION_SECRET));
 
 const startServer = async () => {
   await connectAuto();
+  //? Validar la existencia de las variables de entorno importantes
+  validateEnv();
 
   // const store = new MongoStore({
   //   client: (await import("mongoose")).default.connection.getClient(),
@@ -62,9 +66,22 @@ const startServer = async () => {
 
   //Agrupar routers versionados
   app.use("/api/v1", apiV1Router);
+  app.use("/process", processRouter);
 
   app.use((request, response) => {
     response.status(404).json({ error: "Pagina no encontrada" });
+  });
+
+  //? Manejo de errores globales
+  process.on("unhandledRejection", (reason) => {
+    console.error("[Process] Unhandled Rejection: ", reason);
+  });
+  process.on("uncaughtException", (error) => {
+    console.error("[Process] Uncaught Exception: ", error);
+  });
+  process.on("SIGINT", () => {
+    console.error("\n[Process] SIGINT recibido. Cerrando...");
+    process.exit(0);
   });
 
   app.listen(PORT, () => {

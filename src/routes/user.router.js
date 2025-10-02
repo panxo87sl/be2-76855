@@ -2,6 +2,8 @@ import { Router } from "express";
 import UserService from "../dao/services/user.services.js";
 import bcrypt from "bcrypt";
 import CartService from "../dao/services/cart.services.js";
+// import { requireRole } from "../middleware/policies.middleware.js";
+// import { requireJwtCookie } from "../middleware/auth.middleware.js";
 
 const router = Router();
 const userService = new UserService();

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import UserService from "../dao/services/user.services.js";
+import CartService from "../dao/services/cart.services.js";
 import {
   alreadyLoggedIn,
   requireJWT,
@@ -11,6 +12,7 @@ import passport from "passport";
 
 const router = Router();
 const userService = new UserService();
+const cartService = new CartService();
 
 router.post("/register", requireJwtCookie, async (request, response) => {
   try {
@@ -36,6 +38,7 @@ router.post("/register", requireJwtCookie, async (request, response) => {
       age: parseInt(age),
       password: hash,
     });
+    await cartService.createCart({ user: user._id });
     response.status(201).json({ message: "Usuario creado", payload: { usuario: user } });
   } catch (error) {
     response.status(500).json({ error: "Usuario no creado", message: error.message });

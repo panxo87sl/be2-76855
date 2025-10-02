@@ -1,4 +1,9 @@
-import { cartRepository } from "../../repositories/cart.repository.js";
+import CartRepository from "../../repositories/cart.repository.js";
+import TicketService from "./ticket.services.js";
+import { v4 as uuidv4 } from "uuid";
+
+const cartRepository = new CartRepository();
+const ticketService = new TicketService();
 
 export default class CartService {
   async getAllCarts() {
@@ -39,5 +44,53 @@ export default class CartService {
 
   async clearCart(cartId) {
     return await cartRepository.clearCart(cartId);
+  }
+
+  async purchaseCart(userId, userEmail) {
+    const cart = await cartRepository.getByUserId(userId);
+    if (!cart || !cart.products || cart.products.length === 0) {
+      return { ticket: null, productosSinStock: [], productosProcesados: [] };
+    }
+
+    const productosProcesados = [];
+    const productosSinStock = [];
+
+    cart.products.forEach((item) => {
+      const producto = item.product;
+      const cantidad = item.quantity;
+
+      if (producto.stock >= cantidad) {
+        productosProcesados.push({
+          _id: producto._id,
+          title: producto.title,
+          price: producto.price,
+          quantity: cantidad,
+        });
+      } else {
+        productosSinStock.push({
+          _id: producto._id,
+          title: producto.title,
+          quantitySolicitada: cantidad,
+          stockDisponible: producto.stock,
+        });
+      }
+    });
+
+    if (productosProcesados.length === 0) {
+      return { ticket: null, productosSinStock, productosProcesados: [] };
+    }
+
+    const totalAmount = productosProcesados.reduce((acc, p) => acc + p.price * p.quantity, 0);
+
+    const ticketData = {
+      code: uuidv4(),
+      amount: totalAmount,
+      purchaser: userEmail,
+    };
+
+    const ticket = await ticketService.createTicket(ticketData);
+    await cartRepository.clearCart(cart._id); //?Vaciar el Carro despues de la compra
+
+    return { ticket, productosSinStock, productosProcesados };
   }
 }

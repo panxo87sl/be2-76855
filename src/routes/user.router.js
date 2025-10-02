@@ -1,8 +1,11 @@
 import { Router } from "express";
 import UserService from "../dao/services/user.services.js";
+import bcrypt from "bcrypt";
+import CartService from "../dao/services/cart.services.js";
 
 const router = Router();
 const userService = new UserService();
+const cartService = new CartService();
 
 //? se crean rutas alternativas para gestion mas rapida de usuarios, util para las pruebas en el desarrollo
 
@@ -25,6 +28,8 @@ router.post("/", async (request, response) => {
         .status(400)
         .json({ error: "Usuario no creado", message: "Email ya esta registrado" });
     }
+    const hash = await bcrypt.hash(password, 10); //? Hasheado a 10 caracteres
+
     // const user = new User({ first_name, last_name, email, age: parseInt(age), password });
     // await user.save(); //? Cambio de tecnologia, se traspasa la logica a DAO capa de datos.
     const user = await userService.createUser({
@@ -32,8 +37,10 @@ router.post("/", async (request, response) => {
       last_name,
       email,
       age: parseInt(age),
-      password,
+      password: hash,
     });
+    await cartService.createCart({ user: user._id });
+
     response.status(201).json({ message: "Usuario creado", payload: { usuario: user } });
   } catch (error) {
     response.status(500).json({ error: "Usuario no creado", message: error.message });

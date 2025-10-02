@@ -1,5 +1,6 @@
-import { productRepository } from "../../repositories/product.repository.js";
+import ProductRepository from "../../repositories/product.repository.js";
 
+const productRepository = new ProductRepository();
 export default class ProductService {
   async getAllProducts() {
     return await productRepository.getAll();

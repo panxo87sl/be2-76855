@@ -1,5 +1,7 @@
 import { Router } from "express";
 import ProductService from "../dao/services/product.services.js";
+import { requireJwtCookie } from "../middleware/auth.middleware.js";
+import { requireRole } from "../middleware/policies.middleware.js";
 
 const router = Router();
 const productService = new ProductService();
@@ -45,7 +47,7 @@ router.get("/:id", async (request, response) => {
 });
 
 //? POST /api/v1/products - Crear un nuevo producto
-router.post("/", async (request, response) => {
+router.post("/", requireJwtCookie, requireRole("admin"), async (request, response) => {
   try {
     const { title, description, price, stock, category, thumbnail } = request.body;
 
@@ -72,7 +74,7 @@ router.post("/", async (request, response) => {
 });
 
 //? PUT /api/v1/products/:id - Actualizar un producto
-router.put("/:id", async (request, response) => {
+router.put("/:id", requireJwtCookie, requireRole("admin"), async (request, response) => {
   try {
     const { id } = request.params;
     const dataToUpdate = request.body;
@@ -103,7 +105,7 @@ router.put("/:id", async (request, response) => {
 });
 
 //? DELETE /api/v1/products/:id - Eliminar un producto
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireJwtCookie, requireRole("admin"), async (request, response) => {
   try {
     const { id } = request.params;
 
